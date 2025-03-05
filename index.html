@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Kehadiran dan Lembur</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -12,9 +13,7 @@
             background-color: #e8f5e9; /* Warna hijau muda */ 
             color: #2e7d32; /* Warna hijau tua */
         }
-        h1 { 
-            color: #1b5e20; 
-        }
+        h1 { color: #1b5e20; }
         input {
             padding: 10px;
             border: 2px solid #2e7d32;
@@ -24,9 +23,7 @@
             color: #2e7d32;
             font-size: 16px;
         }
-        input:hover {
-            background-color: #c8e6c9;
-        }
+        input:hover { background-color: #c8e6c9; }
         #preview { 
             margin-top: 20px; 
             max-width: 100%; 
@@ -34,15 +31,20 @@
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
             display: none;
         }
-        #fileInfo {
-            margin-top: 10px;
-            font-weight: bold;
+        #fileInfo { margin-top: 10px; font-weight: bold; }
+        #footer { margin-top: 20px; font-size: 14px; color: #388e3c; }
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 80%;
+            background-color: white;
         }
-        #footer {
-            margin-top: 20px;
-            font-size: 14px;
-            color: #388e3c;
+        th, td {
+            border: 1px solid #2e7d32;
+            padding: 8px;
+            text-align: left;
         }
+        th { background-color: #a5d6a7; }
     </style>
 </head>
 <body>
@@ -53,20 +55,43 @@
     <br>
     <img id="preview">
     <p id="fileInfo"></p>
+    
+    <table id="excelTable"></table>
 
     <p id="footer">by Funky</p>
 
     <script>
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
+            if (!file) return;
+
+            const reader = new FileReader();
+
+            if (file.type.includes("image")) {
+                // Preview Gambar
                 reader.onload = function(e) {
                     document.getElementById('preview').src = e.target.result;
                     document.getElementById('preview').style.display = "block";
                     document.getElementById('fileInfo').textContent = `File: ${file.name} (${Math.round(file.size / 1024)} KB)`;
+                    document.getElementById('excelTable').innerHTML = ""; // Hapus tabel jika ada
                 };
                 reader.readAsDataURL(file);
+            } else if (file.name.endsWith(".xls") || file.name.endsWith(".xlsx")) {
+                // Preview Excel
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: "array" });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const htmlTable = XLSX.utils.sheet_to_html(sheet);
+
+                    document.getElementById('preview').style.display = "none"; // Sembunyikan gambar
+                    document.getElementById('fileInfo').textContent = `File: ${file.name} (${Math.round(file.size / 1024)} KB)`;
+                    document.getElementById('excelTable').innerHTML = htmlTable;
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert("File tidak didukung! Hanya gambar dan Excel yang bisa dipreview.");
             }
         });
     </script>
