@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Kehadiran dan Lembur</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { 
             font-family: Arial, sans-serif; 
             text-align: center; 
             padding: 20px; 
-            background-color: #e8f5e9; /* Warna hijau muda */ 
-            color: #2e7d32; /* Warna hijau tua */
+            background-color: #e8f5e9; 
+            color: #2e7d32; 
         }
         h1 { color: #1b5e20; }
         input {
@@ -24,45 +23,26 @@
             font-size: 16px;
         }
         input:hover { background-color: #c8e6c9; }
-        #preview { 
-            margin-top: 20px; 
-            max-width: 100%; 
-            border-radius: 5px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            display: none;
-        }
         #fileInfo { margin-top: 10px; font-weight: bold; }
         #footer { margin-top: 20px; font-size: 14px; color: #388e3c; }
-        table {
-            margin: 20px auto;
-            border-collapse: collapse;
+        #officeViewer {
             width: 90%;
-            background-color: white;
-        }
-        th, td {
-            border: 1px solid #2e7d32;
-            padding: 8px;
-            text-align: left;
-        }
-        th { background-color: #a5d6a7; }
-        .sheet-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #1b5e20;
+            height: 600px;
+            border: none;
+            display: none;
             margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <h1>Laporan Kehadiran dan Lembur</h1>
-    <p>Upload file laporan untuk melihat preview-nya sebelum disimpan.</p>
+    <p>Upload file laporan untuk melihat preview-nya dalam Microsoft Excel Online.</p>
     
     <input type="file" id="fileInput">
     <br>
-    <img id="preview">
     <p id="fileInfo"></p>
-    
-    <div id="excelContainer"></div>
+
+    <iframe id="officeViewer"></iframe>
 
     <p id="footer">by Funky</p>
 
@@ -71,48 +51,22 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
+            if (file.name.endsWith(".xls") || file.name.endsWith(".xlsx")) {
+                alert("File Excel perlu diunggah ke hosting agar bisa ditampilkan di Excel Online.");
 
-            if (file.type.includes("image")) {
-                // Preview Gambar
-                reader.onload = function(e) {
-                    document.getElementById('preview').src = e.target.result;
-                    document.getElementById('preview').style.display = "block";
-                    document.getElementById('fileInfo').textContent = `File: ${file.name} (${Math.round(file.size / 1024)} KB)`;
-                    document.getElementById('excelContainer').innerHTML = ""; // Kosongkan preview Excel
-                };
-                reader.readAsDataURL(file);
-            } else if (file.name.endsWith(".xls") || file.name.endsWith(".xlsx")) {
-                // Preview Full Excel
-                reader.onload = function(e) {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: "array" });
-                    const container = document.getElementById('excelContainer');
-                    container.innerHTML = ""; // Kosongkan container dulu
+                // === PENTING ===
+                // File harus diunggah ke hosting seperti OneDrive atau server lain.
+                // Contoh URL file setelah diunggah:
+                const fileURL = "https://onedrive.live.com/download?resid=EXAMPLE"; 
+                
+                // Buat tampilan di Office Viewer
+                const officeViewer = document.getElementById('officeViewer');
+                officeViewer.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileURL)}`;
+                officeViewer.style.display = "block";
 
-                    document.getElementById('preview').style.display = "none"; // Sembunyikan gambar
-                    document.getElementById('fileInfo').textContent = `File: ${file.name} (${Math.round(file.size / 1024)} KB)`;
-
-                    // Loop semua sheet
-                    workbook.SheetNames.forEach(sheetName => {
-                        const sheet = workbook.Sheets[sheetName];
-                        const htmlTable = XLSX.utils.sheet_to_html(sheet);
-
-                        // Tambahin judul sheet sebelum tabel
-                        const sheetTitle = document.createElement('div');
-                        sheetTitle.className = "sheet-title";
-                        sheetTitle.textContent = `Sheet: ${sheetName}`;
-                        container.appendChild(sheetTitle);
-
-                        // Tambahin tabel ke container
-                        const tableWrapper = document.createElement('div');
-                        tableWrapper.innerHTML = htmlTable;
-                        container.appendChild(tableWrapper);
-                    });
-                };
-                reader.readAsArrayBuffer(file);
+                document.getElementById('fileInfo').textContent = `File: ${file.name}`;
             } else {
-                alert("File tidak didukung! Hanya gambar dan Excel yang bisa dipreview.");
+                alert("Hanya file Excel yang bisa ditampilkan dalam tampilan Microsoft Office.");
             }
         });
     </script>
