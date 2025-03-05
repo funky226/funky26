@@ -36,7 +36,7 @@
         table {
             margin: 20px auto;
             border-collapse: collapse;
-            width: 80%;
+            width: 90%;
             background-color: white;
         }
         th, td {
@@ -45,6 +45,12 @@
             text-align: left;
         }
         th { background-color: #a5d6a7; }
+        .sheet-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1b5e20;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -56,7 +62,7 @@
     <img id="preview">
     <p id="fileInfo"></p>
     
-    <table id="excelTable"></table>
+    <div id="excelContainer"></div>
 
     <p id="footer">by Funky</p>
 
@@ -73,21 +79,36 @@
                     document.getElementById('preview').src = e.target.result;
                     document.getElementById('preview').style.display = "block";
                     document.getElementById('fileInfo').textContent = `File: ${file.name} (${Math.round(file.size / 1024)} KB)`;
-                    document.getElementById('excelTable').innerHTML = ""; // Hapus tabel jika ada
+                    document.getElementById('excelContainer').innerHTML = ""; // Kosongkan preview Excel
                 };
                 reader.readAsDataURL(file);
             } else if (file.name.endsWith(".xls") || file.name.endsWith(".xlsx")) {
-                // Preview Excel
+                // Preview Full Excel
                 reader.onload = function(e) {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: "array" });
-                    const sheetName = workbook.SheetNames[0];
-                    const sheet = workbook.Sheets[sheetName];
-                    const htmlTable = XLSX.utils.sheet_to_html(sheet);
+                    const container = document.getElementById('excelContainer');
+                    container.innerHTML = ""; // Kosongkan container dulu
 
                     document.getElementById('preview').style.display = "none"; // Sembunyikan gambar
                     document.getElementById('fileInfo').textContent = `File: ${file.name} (${Math.round(file.size / 1024)} KB)`;
-                    document.getElementById('excelTable').innerHTML = htmlTable;
+
+                    // Loop semua sheet
+                    workbook.SheetNames.forEach(sheetName => {
+                        const sheet = workbook.Sheets[sheetName];
+                        const htmlTable = XLSX.utils.sheet_to_html(sheet);
+
+                        // Tambahin judul sheet sebelum tabel
+                        const sheetTitle = document.createElement('div');
+                        sheetTitle.className = "sheet-title";
+                        sheetTitle.textContent = `Sheet: ${sheetName}`;
+                        container.appendChild(sheetTitle);
+
+                        // Tambahin tabel ke container
+                        const tableWrapper = document.createElement('div');
+                        tableWrapper.innerHTML = htmlTable;
+                        container.appendChild(tableWrapper);
+                    });
                 };
                 reader.readAsArrayBuffer(file);
             } else {
